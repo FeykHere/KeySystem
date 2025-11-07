@@ -1,6 +1,7 @@
 --[[====================================================================
   Feykhub Key System – Dark Glassmorphism (300×240)
   • Valid key → 10s loading → "Executed, Enjoy!" → Auto-close
+  • NOW POWERED BY JUNKIE DEVELOPMENT (REAL SERVER-SIDE CHECK)
 ====================================================================--]]
 
 local Players          = game:GetService("Players")
@@ -8,6 +9,7 @@ local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui          = game:GetService("CoreGui")
 local Lighting         = game:GetService("Lighting")
+local HttpService      = game:GetService("HttpService")  -- Added
 
 local player = Players.LocalPlayer
 
@@ -20,7 +22,10 @@ local EXECUTION_TIME = 10   -- seconds
 
 local LINKVERTISE_LINK = "https://linkvertise.com/12345/feykhub?o=123456"
 local LOOTLABS_LINK    = "https://lootlabs.gg/key/feykhub-2025"
-local VALID_KEY        = "FEYKHUB2025"
+
+-- === JUNKIE DEVELOPMENT CONFIG ===
+local JUNKIE_API_URL = "https://api.junkie-development.de/api/v1/keys/verify"
+local JUNKIE_API_TOKEN = "YOUR_JUNKIE_API_TOKEN"  -- <<< REPLACE THIS !!!
 
 -- Your real script (replace with loadstring, require, etc.)
 local function executeFeykhub()
@@ -243,18 +248,15 @@ local loadingPanel = nil
 local finalPanel = nil
 
 local function showFinalMessage()
-	-- Remove loading panel
 	if loadingPanel and loadingPanel.Parent then
 		loadingPanel:Destroy()
 	end
 
-	-- Show "Executed, Enjoy!"
 	finalPanel = glassPanel(screenGui, UDim2.new(0, 300, 0, 100), UDim2.new(0.5, 0, 0.5, 0))
 	finalPanel.BackgroundTransparency = 0.5
 
 	label(finalPanel, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Executed, Enjoy!", 22, Color3.fromRGB(100, 255, 150), Enum.Font.GothamBold)
 
-	-- Auto-close after 2.5s
 	task.delay(2.5, function()
 		if finalPanel and finalPanel.Parent then
 			TweenService:Create(finalPanel, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
@@ -267,18 +269,15 @@ local function showFinalMessage()
 end
 
 local function showLoadingScreen()
-	-- Slide main UI up
 	TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
 		Position = UDim2.new(0.5,0,0.5,-400)
 	}):Play()
 
-	-- Create loading panel
 	loadingPanel = glassPanel(screenGui, UDim2.new(0,300,0,140), UDim2.new(0.5,0,0.5,0))
 	loadingPanel.BackgroundTransparency = 0.5
 
 	label(loadingPanel, UDim2.new(1,0,0,40), UDim2.new(0,0,0,15), "Welcome, "..player.Name.."!", 20, Color3.fromRGB(100,255,150), Enum.Font.GothamBold)
 
-	-- Bar background
 	local barBg = Instance.new("Frame")
 	barBg.Size = UDim2.new(0.9,0,0,16)
 	barBg.Position = UDim2.new(0.05,0,0,70)
@@ -287,7 +286,6 @@ local function showLoadingScreen()
 	barBg.Parent = loadingPanel
 	Instance.new("UICorner", barBg).CornerRadius = UDim.new(0,8)
 
-	-- Fill
 	local barFill = Instance.new("Frame")
 	barFill.Size = UDim2.new(0,0,1,0)
 	barFill.BackgroundColor3 = Color3.fromRGB(70,180,100)
@@ -295,13 +293,10 @@ local function showLoadingScreen()
 	barFill.Parent = barBg
 	Instance.new("UICorner", barFill).CornerRadius = UDim.new(0,8)
 
-	-- Text inside bar
 	label(barBg, UDim2.new(1,0,1,0), UDim2.new(0,0,0,0), "Executing...", 14, Color3.fromRGB(255,255,255), Enum.Font.GothamBold).ZIndex = 2
 
-	-- Animate fill
 	TweenService:Create(barFill, TweenInfo.new(EXECUTION_TIME, Enum.EasingStyle.Linear), {Size = UDim2.new(1,0,1,0)}):Play()
 
-	-- After 10s: Execute + show final message
 	task.delay(EXECUTION_TIME, function()
 		executeFeykhub()
 		showFinalMessage()
@@ -325,21 +320,66 @@ end)
 getKeyBtn.MouseButton1Click:Connect(function() showPage(getKeyPage) end)
 backBtn.MouseButton1Click:Connect(goBack)
 
---======================= KEY VALIDATION =======================--
+--======================= JUNKIE KEY VALIDATION =======================--
+local function verifyKeyWithJunkie(key, callback)
+	-- Run in thread to avoid freezing UI
+	task.spawn(function()
+		local success, response = pcall(function()
+			local payload = {
+				key = key,
+				userId = player.UserId,
+				hwid = game:GetService("RbxAnalyticsService"):GetClientId()
+			}
+
+			return HttpService:PostAsync(
+				JUNKIE_API_URL,
+				HttpService:JSONEncode(payload),
+				Enum.HttpContentType.ApplicationJson,
+				false,
+				{ ["Authorization"] = "Bearer " .. JUNKIE_API_TOKEN }
+			)
+		end)
+
+		if not success then
+			callback(false, "Network error. Check internet.")
+			return
+		end
+
+		local data = HttpService:JSONDecode(response)
+
+		if data.valid then
+			callback(true, "Key verified!")
+		else
+			callback(false, data.error or "Invalid or expired key.")
+		end
+	end)
+end
+
 submitBtn.MouseButton1Click:Connect(function()
-	local key = keyBox.Text
+	local key = keyBox.Text:gsub("%s", "")  -- Trim spaces
+
 	if key == "" then
 		showToast("Enter a key first!", Color3.fromRGB(255,180,80))
 		shake(keyBox)
 		return
 	end
 
-	if key == VALID_KEY then
-		showLoadingScreen()
-	else
-		showToast("Invalid or Expired Key", Color3.fromRGB(255,80,80))
-		shake(keyBox)
-	end
+	-- Disable button during check
+	submitBtn.Text = "Verifying..."
+	submitBtn.Active = false
+
+	verifyKeyWithJunkie(key, function(valid, msg)
+		if valid then
+			showLoadingScreen()
+		else
+			showToast(msg, Color3.fromRGB(255,80,80))
+			shake(keyBox)
+		end
+
+		-- Re-enable button
+		submitBtn.Text = "Submit"
+		submitBtn.Active = true
+	end)
 end)
 
 --======================= COPY LINKS ===========================--
