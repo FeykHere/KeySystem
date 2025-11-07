@@ -1,0 +1,403 @@
+--[[====================================================================
+  Feykhub Key System – Dark Glassmorphism (300×240)
+  • Valid key → 10s loading → "Executed, Enjoy!" → Auto-close
+====================================================================--]]
+
+local Players          = game:GetService("Players")
+local TweenService     = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui          = game:GetService("CoreGui")
+local Lighting         = game:GetService("Lighting")
+
+local player = Players.LocalPlayer
+
+--============================ CONFIG ============================--
+local BLUR_INTENSITY = 20
+local ANIMATION_TIME = 0.35
+local UI_WIDTH       = 300
+local UI_HEIGHT      = 240
+local EXECUTION_TIME = 10   -- seconds
+
+local LINKVERTISE_LINK = "https://linkvertise.com/12345/feykhub?o=123456"
+local LOOTLABS_LINK    = "https://lootlabs.gg/key/feykhub-2025"
+local VALID_KEY        = "FEYKHUB2025"
+
+-- Your real script (replace with loadstring, require, etc.)
+local function executeFeykhub()
+	warn("Feykhub Executed! (replace with real loadstring)")
+	-- loadstring(game:HttpGet("https://your-script.com"))()
+end
+--================================================================--
+
+--======================= BLUR EFFECT ===========================--
+local blur = Instance.new("BlurEffect")
+blur.Size = 0
+blur.Parent = Lighting
+
+--======================= SCREEN GUI ============================--
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FeykhubKeySystem"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = CoreGui
+
+--========================= TOAST SYSTEM =========================--
+local function showToast(msg, col)
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.new(0, 240, 0, 36)
+	t.Position = UDim2.new(0.5, -120, 1, -80)
+	t.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	t.BackgroundTransparency = 0.3
+	t.Text = msg
+	t.TextColor3 = col or Color3.fromRGB(255,255,255)
+	t.Font = Enum.Font.GothamBold
+	t.TextSize = 15
+	t.TextXAlignment = Enum.TextXAlignment.Center
+	t.ZIndex = 10
+	t.Parent = screenGui
+
+	local c = Instance.new("UICorner", t)
+	c.CornerRadius = UDim.new(0,12)
+
+	TweenService:Create(t, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Position = UDim2.new(0.5,-120,1,-120)}):Play()
+	task.delay(0.4, function()
+		TweenService:Create(t, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In,0,false,1.5), {
+			BackgroundTransparency = 1, TextTransparency = 1
+		}):Play()
+	end)
+	game.Debris:AddItem(t, 3)
+end
+
+local function shake(frame)
+	local pos = frame.Position
+	for i = 1,6 do
+		local off = (i%2==0) and -8 or 8
+		TweenService:Create(frame, TweenInfo.new(0.05), {Position = UDim2.new(pos.X.Scale, pos.X.Offset+off, pos.Y.Scale, pos.Y.Offset)}):Play()
+		task.wait(0.05)
+	end
+	TweenService:Create(frame, TweenInfo.new(0.1), {Position = pos}):Play()
+end
+
+--========================= GLASS PANEL =========================--
+local function glassPanel(parent, size, pos)
+	local f = Instance.new("Frame")
+	f.Size = size
+	f.Position = pos
+	f.AnchorPoint = Vector2.new(0.5,0.5)
+	f.BackgroundColor3 = Color3.fromRGB(20,20,20)
+	f.BackgroundTransparency = 0.45
+	f.BorderSizePixel = 0
+	f.ClipsDescendants = true
+	f.Parent = parent
+
+	local c = Instance.new("UICorner", f)
+	c.CornerRadius = UDim.new(0,18)
+
+	local s = Instance.new("UIStroke", f)
+	s.Thickness = 1.3
+	s.Color = Color3.fromRGB(255,255,255)
+	s.Transparency = 0.75
+
+	local g = Instance.new("UIGradient", f)
+	g.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(200,200,200))
+	}
+	g.Transparency = NumberSequence.new{
+		NumberSequenceKeypoint.new(0,0.7),
+		NumberSequenceKeypoint.new(1,0.9)
+	}
+	g.Rotation = 135
+
+	task.spawn(function()
+		while f and f.Parent do
+			TweenService:Create(g, TweenInfo.new(6,Enum.EasingStyle.Linear,Enum.EasingDirection.InOut,-1), {Offset=Vector2.new(1,1)}):Play()
+			task.wait(6)
+		end
+	end)
+	return f
+end
+
+--========================= GLASS BUTTON =========================
+local function glassButton(parent, size, pos, txt, col)
+	local b = Instance.new("TextButton")
+	b.Size = size
+	b.Position = pos
+	b.BackgroundColor3 = col or Color3.fromRGB(255,255,255)
+	b.BackgroundTransparency = 0.75
+	b.Text = txt
+	b.TextColor3 = Color3.fromRGB(255,255,255)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 18
+	b.AutoButtonColor = false
+	b.Parent = parent
+
+	local c = Instance.new("UICorner", b)
+	c.CornerRadius = UDim.new(0,12)
+
+	b.MouseEnter:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.25), {BackgroundTransparency=0.65, Size=UDim2.new(size.X.Scale,size.X.Offset+6,size.Y.Scale,size.Y.Offset+4)}):Play()
+	end)
+	b.MouseLeave:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.25), {BackgroundTransparency=0.75, Size=size}):Play()
+	end)
+	b.MouseButton1Down:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.1), {Size=UDim2.new(size.X.Scale,size.X.Offset*0.94,size.Y.Scale,size.Y.Offset*0.94)}):Play()
+	end)
+	b.MouseButton1Up:Connect(function()
+		TweenService:Create(b, TweenInfo.new(0.1), {Size=size}):Play()
+	end)
+	return b
+end
+
+local function label(parent, size, pos, txt, sz, col, font)
+	local l = Instance.new("TextLabel")
+	l.Size = size
+	l.Position = pos
+	l.BackgroundTransparency = 1
+	l.Text = txt
+	l.TextColor3 = col or Color3.fromRGB(255,255,255)
+	l.TextSize = sz or 16
+	l.Font = font or Enum.Font.Gotham
+	l.TextXAlignment = Enum.TextXAlignment.Center
+	l.Parent = parent
+	return l
+end
+
+--======================= MAIN FRAME ============================--
+local mainFrame = glassPanel(screenGui, UDim2.new(0,UI_WIDTH,0,UI_HEIGHT), UDim2.new(0.5,0,0.5,0))
+
+-- Title
+label(mainFrame, UDim2.new(1,0,0,40), UDim2.new(0,0,0,8), "FEYKHUB", 22, Color3.fromRGB(255,255,255), Enum.Font.GothamBold)
+
+-- Close button
+local closeBtn = glassButton(mainFrame, UDim2.new(0,36,0,36), UDim2.new(1,-48,0,8), "X", Color3.fromRGB(220,50,50))
+closeBtn.TextSize = 20
+
+-- Back button
+local backBtn = Instance.new("ImageButton")
+backBtn.Size = UDim2.new(0,36,0,36)
+backBtn.Position = UDim2.new(0,12,0,8)
+backBtn.BackgroundTransparency = 0.75
+backBtn.BackgroundColor3 = Color3.fromRGB(255,255,255)
+backBtn.Image = "rbxassetid://6031094678"
+backBtn.ScaleType = Enum.ScaleType.Fit
+backBtn.Visible = false
+backBtn.Parent = mainFrame
+Instance.new("UICorner", backBtn).CornerRadius = UDim.new(0,10)
+
+-- Pages container
+local pagesContainer = Instance.new("Frame")
+pagesContainer.Size = UDim2.new(1,-30,1,-70)
+pagesContainer.Position = UDim2.new(0,15,0,50)
+pagesContainer.BackgroundTransparency = 1
+pagesContainer.Parent = mainFrame
+
+-- Main page
+local mainPage = Instance.new("Frame")
+mainPage.Size = UDim2.new(1,0,1,0)
+mainPage.BackgroundTransparency = 1
+mainPage.Parent = pagesContainer
+
+local loginBtn = glassButton(mainPage, UDim2.new(1,0,0,44), UDim2.new(0,0,0,10), "Login", Color3.fromRGB(70,130,255))
+local getKeyBtn = glassButton(mainPage, UDim2.new(1,0,0,44), UDim2.new(0,0,0,64), "Get Key", Color3.fromRGB(50,200,100))
+
+-- Login page
+local loginPage = Instance.new("Frame")
+loginPage.Size = UDim2.new(1,0,1,0)
+loginPage.BackgroundTransparency = 1
+loginPage.Visible = false
+loginPage.Parent = pagesContainer
+
+label(loginPage, UDim2.new(1,0,0,30), UDim2.new(0,0,0,0), "Enter Your Key", 18, Color3.fromRGB(230,230,255), Enum.Font.GothamBold)
+
+local keyBox = Instance.new("TextBox")
+keyBox.Size = UDim2.new(1,0,0,38)
+keyBox.Position = UDim2.new(0,0,0,35)
+keyBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
+keyBox.BackgroundTransparency = 0.7
+keyBox.PlaceholderText = "Paste key here..."
+keyBox.PlaceholderColor3 = Color3.fromRGB(150,150,150)
+keyBox.TextColor3 = Color3.fromRGB(30,30,30)
+keyBox.Font = Enum.Font.Gotham
+keyBox.TextSize = 16
+keyBox.Parent = loginPage
+Instance.new("UICorner", keyBox).CornerRadius = UDim.new(0,10)
+
+local submitBtn = glassButton(loginPage, UDim2.new(1,0,0,44), UDim2.new(0,0,0,85), "Submit", Color3.fromRGB(60,180,80))
+
+-- Get-key page
+local getKeyPage = Instance.new("Frame")
+getKeyPage.Size = UDim2.new(1,0,1,0)
+getKeyPage.BackgroundTransparency = 1
+getKeyPage.Visible = false
+getKeyPage.Parent = pagesContainer
+
+local linkvertiseBtn = glassButton(getKeyPage, UDim2.new(1,0,0,44), UDim2.new(0,0,0,15), "Linkvertise", Color3.fromRGB(255,100,0))
+label(getKeyPage, UDim2.new(1,0,0,18), UDim2.new(0,0,0,62), "Fast and Reliable", 13, Color3.fromRGB(255,220,180))
+
+local lootlabsBtn = glassButton(getKeyPage, UDim2.new(1,0,0,44), UDim2.new(0,0,0,90), "Lootlabs", Color3.fromRGB(140,60,200))
+label(getKeyPage, UDim2.new(1,0,0,18), UDim2.new(0,0,0,137), "Whatever you want", 13, Color3.fromRGB(200,180,255))
+
+--======================= LOADING SCREEN + FINAL MESSAGE =====--
+local loadingPanel = nil
+local finalPanel = nil
+
+local function showFinalMessage()
+	-- Remove loading panel
+	if loadingPanel and loadingPanel.Parent then
+		loadingPanel:Destroy()
+	end
+
+	-- Show "Executed, Enjoy!"
+	finalPanel = glassPanel(screenGui, UDim2.new(0, 300, 0, 100), UDim2.new(0.5, 0, 0.5, 0))
+	finalPanel.BackgroundTransparency = 0.5
+
+	label(finalPanel, UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), "Executed, Enjoy!", 22, Color3.fromRGB(100, 255, 150), Enum.Font.GothamBold)
+
+	-- Auto-close after 2.5s
+	task.delay(2.5, function()
+		if finalPanel and finalPanel.Parent then
+			TweenService:Create(finalPanel, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+			task.delay(0.5, function()
+				finalPanel:Destroy()
+				TweenService:Create(blur, TweenInfo.new(0.5), {Size = 0}):Play()
+			end)
+		end
+	end)
+end
+
+local function showLoadingScreen()
+	-- Slide main UI up
+	TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+		Position = UDim2.new(0.5,0,0.5,-400)
+	}):Play()
+
+	-- Create loading panel
+	loadingPanel = glassPanel(screenGui, UDim2.new(0,300,0,140), UDim2.new(0.5,0,0.5,0))
+	loadingPanel.BackgroundTransparency = 0.5
+
+	label(loadingPanel, UDim2.new(1,0,0,40), UDim2.new(0,0,0,15), "Welcome, "..player.Name.."!", 20, Color3.fromRGB(100,255,150), Enum.Font.GothamBold)
+
+	-- Bar background
+	local barBg = Instance.new("Frame")
+	barBg.Size = UDim2.new(0.9,0,0,16)
+	barBg.Position = UDim2.new(0.05,0,0,70)
+	barBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	barBg.BackgroundTransparency = 0.6
+	barBg.Parent = loadingPanel
+	Instance.new("UICorner", barBg).CornerRadius = UDim.new(0,8)
+
+	-- Fill
+	local barFill = Instance.new("Frame")
+	barFill.Size = UDim2.new(0,0,1,0)
+	barFill.BackgroundColor3 = Color3.fromRGB(70,180,100)
+	barFill.BackgroundTransparency = 0.3
+	barFill.Parent = barBg
+	Instance.new("UICorner", barFill).CornerRadius = UDim.new(0,8)
+
+	-- Text inside bar
+	label(barBg, UDim2.new(1,0,1,0), UDim2.new(0,0,0,0), "Executing...", 14, Color3.fromRGB(255,255,255), Enum.Font.GothamBold).ZIndex = 2
+
+	-- Animate fill
+	TweenService:Create(barFill, TweenInfo.new(EXECUTION_TIME, Enum.EasingStyle.Linear), {Size = UDim2.new(1,0,1,0)}):Play()
+
+	-- After 10s: Execute + show final message
+	task.delay(EXECUTION_TIME, function()
+		executeFeykhub()
+		showFinalMessage()
+	end)
+end
+
+--======================= PAGE SWITCHING =======================--
+local function showPage(p)
+	mainPage.Visible   = p == mainPage
+	loginPage.Visible  = p == loginPage
+	getKeyPage.Visible = p == getKeyPage
+	backBtn.Visible    = p ~= mainPage
+end
+local function goBack() showPage(mainPage) end
+
+loginBtn.MouseButton1Click:Connect(function()
+	showPage(loginPage)
+	task.wait()
+	keyBox:CaptureFocus()
+end)
+getKeyBtn.MouseButton1Click:Connect(function() showPage(getKeyPage) end)
+backBtn.MouseButton1Click:Connect(goBack)
+
+--======================= KEY VALIDATION =======================--
+submitBtn.MouseButton1Click:Connect(function()
+	local key = keyBox.Text
+	if key == "" then
+		showToast("Enter a key first!", Color3.fromRGB(255,180,80))
+		shake(keyBox)
+		return
+	end
+
+	if key == VALID_KEY then
+		showLoadingScreen()
+	else
+		showToast("Invalid or Expired Key", Color3.fromRGB(255,80,80))
+		shake(keyBox)
+	end
+end)
+
+--======================= COPY LINKS ===========================--
+linkvertiseBtn.MouseButton1Click:Connect(function()
+	setclipboard(LINKVERTISE_LINK)
+	showToast("Linkvertise Link Copied!", Color3.fromRGB(100,255,100))
+end)
+lootlabsBtn.MouseButton1Click:Connect(function()
+	setclipboard(LOOTLABS_LINK)
+	showToast("Lootlabs Link Copied!", Color3.fromRGB(100,255,100))
+end)
+
+--======================= CLOSE UI =============================--
+local function closeUI()
+	TweenService:Create(mainFrame, TweenInfo.new(ANIMATION_TIME, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Position = UDim2.new(0.5,0,1.5,0)}):Play()
+	TweenService:Create(blur, TweenInfo.new(ANIMATION_TIME), {Size = 0}):Play()
+	task.delay(ANIMATION_TIME, function() screenGui:Destroy() end)
+end
+closeBtn.MouseButton1Click:Connect(closeUI)
+
+--======================= DRAG (pull-down close) ==============--
+do
+	local dragging, dragStart, startPos = false
+	local pullThreshold = 100
+
+	mainFrame.InputBegan:Connect(function(inp)
+		if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = inp.Position
+			startPos = mainFrame.Position
+		end
+	end)
+
+	mainFrame.InputChanged:Connect(function(inp)
+		if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then
+			local delta = inp.Position - dragStart
+			local newY = startPos.Y.Offset + delta.Y
+			mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, newY)
+
+			if newY > startPos.Y.Offset + pullThreshold then
+				closeUI()
+				dragging = false
+			end
+		end
+	end)
+
+	mainFrame.InputEnded:Connect(function()
+		if dragging then
+			dragging = false
+			TweenService:Create(mainFrame, TweenInfo.new(0.25, Enum.EasingStyle.Back), {Position = UDim2.new(0.5,0,0.5,0)}):Play()
+		end
+	end)
+end
+
+--======================= OPEN ANIMATION =======================--
+task.spawn(function()
+	task.wait(0.05)
+	TweenService:Create(blur, TweenInfo.new(ANIMATION_TIME), {Size = BLUR_INTENSITY}):Play()
+	TweenService:Create(mainFrame, TweenInfo.new(ANIMATION_TIME, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0.5,0,0.5,0)}):Play()
+	showPage(mainPage)
+end)
