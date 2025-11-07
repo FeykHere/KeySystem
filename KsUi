@@ -25,7 +25,7 @@ local LOOTLABS_LINK    = "https://lootlabs.gg/key/feykhub-2025"
 
 -- === JUNKIE DEVELOPMENT CONFIG ===
 local JUNKIE_API_URL = "https://api.junkie-development.de/api/v1/keys/verify"
-local JUNKIE_API_TOKEN = "YOUR_JUNKIE_API_TOKEN"  -- <<< REPLACE THIS !!!
+local JUNKIE_API_TOKEN = "4676185d-81d4-4eef-a36f-26ce642932f3"  -- <<< REPLACE THIS !!!
 
 -- Your real script (replace with loadstring, require, etc.)
 local function executeFeykhub()
